@@ -18,6 +18,7 @@ export const CapturesContext = createContext({
   order: 'desc',
   orderBy: 'timeCreated',
   filter: new FilterModel(),
+  errors: [],
   setRowsPerPage: () => {},
   setPage: () => {},
   setOrder: () => {},
@@ -42,6 +43,7 @@ export function CapturesProvider(props) {
   const [filter, setFilter] = useState(
     new FilterModel({ organization_id: ALL_ORGANIZATIONS })
   );
+  const [errors, setErrors] = useState([]);
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -72,7 +74,14 @@ export function CapturesProvider(props) {
     }
 
     setIsLoading(true);
-    const response = await api.getCaptures(filterData, abortController);
+    const response = await api
+      .getCaptures(filterData, abortController)
+      .catch((error) => {
+        handleErrorApiResponse(
+          'An error occurred while loading captures',
+          error
+        );
+      });
     setIsLoading(false);
     setCaptures(response?.captures);
     setCaptureCount(Number(response?.total));
@@ -99,7 +108,13 @@ export function CapturesProvider(props) {
       delete filterData.status;
     }
 
-    const { captures } = await api.getCaptures(filterData);
+    const { captures } = await api.getCaptures(filterData).catch((error) => {
+      handleErrorApiResponse(
+        'An error occurred while loading captures for export',
+        error
+      );
+    });
+
     return captures;
   };
 
@@ -130,6 +145,17 @@ export function CapturesProvider(props) {
     setCaptureCount(null);
   };
 
+  function handleErrorApiResponse(displayMessage, error) {
+    setErrors((prevErrors) => [
+      {
+        message: displayMessage,
+      },
+      ...prevErrors,
+    ]);
+    setIsLoading(false);
+    log.error(`ERROR: ${displayMessage} ${error}`);
+  }
+
   const value = {
     captures,
     captureCount,
@@ -140,6 +166,7 @@ export function CapturesProvider(props) {
     orderBy,
     filter,
     isLoading,
+    errors,
     setIsLoading,
     setRowsPerPage,
     setPage,

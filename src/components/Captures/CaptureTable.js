@@ -24,6 +24,7 @@ import CaptureTooltip from './CaptureTooltip';
 import ExportCaptures from 'components/ExportCaptures';
 import Spinner from 'components/common/Spinner';
 import useStyle from './CaptureTable.styles.js';
+import ErrorsBox from 'components/common/ErrorsBox/ErrorsBox';
 
 const columns = [
   {
@@ -116,6 +117,7 @@ const CaptureTable = () => {
     captures,
     captureCount,
     isLoading,
+    errors,
     setPage,
     setRowsPerPage,
     setOrder,
@@ -204,113 +206,117 @@ const CaptureTable = () => {
   const enableTooltips = process.env.REACT_APP_ENABLE_TOOLTIPS === 'true';
 
   return (
-    <Grid style={{ height: '100%', overflow: 'auto', textAlign: 'center' }}>
-      <Grid
-        container
-        direction="row"
-        justifyContent="space-between"
-        alignItems="center"
-      >
-        <Typography variant="h5" className={classes.title}>
-          Captures
-        </Typography>
-        <Grid className={classes.cornerTable}>
-          <Button
-            variant="outlined"
-            color="primary"
-            startIcon={<GetApp />}
-            className={classes.buttonCsv}
-            onClick={handleOpenExport}
-          >
-            Export Captures
-          </Button>
-          <ExportCaptures
-            isOpen={isOpenExport}
-            handleClose={() => setOpenExport(false)}
-            columns={columns}
-            filter={filter}
-            speciesLookup={speciesLookup}
-          />
-          {tablePagination()}
+    <>
+      {errors.length > 0 && <ErrorsBox errors={errors} />}
+
+      <Grid style={{ height: '100%', overflow: 'auto', textAlign: 'center' }}>
+        <Grid
+          container
+          direction="row"
+          justifyContent="space-between"
+          alignItems="center"
+        >
+          <Typography variant="h5" className={classes.title}>
+            Captures
+          </Typography>
+          <Grid className={classes.cornerTable}>
+            <Button
+              variant="outlined"
+              color="primary"
+              startIcon={<GetApp />}
+              className={classes.buttonCsv}
+              onClick={handleOpenExport}
+            >
+              Export Captures
+            </Button>
+            <ExportCaptures
+              isOpen={isOpenExport}
+              handleClose={() => setOpenExport(false)}
+              columns={columns}
+              filter={filter}
+              speciesLookup={speciesLookup}
+            />
+            {tablePagination()}
+          </Grid>
         </Grid>
-      </Grid>
-      <Table data-testid="captures-table">
-        <TableHead>
-          <TableRow>
-            {columns.map(({ attr, label, noSort }) => (
-              <TableCell
-                key={attr}
-                sortDirection={orderBy === attr ? order : false}
-              >
-                <TableSortLabel
-                  active={orderBy === attr}
-                  direction={orderBy === attr ? order : 'asc'}
-                  onClick={createSortHandler(attr)}
-                  disabled={noSort}
+        <Table data-testid="captures-table">
+          <TableHead>
+            <TableRow>
+              {columns.map(({ attr, label, noSort }) => (
+                <TableCell
+                  key={attr}
+                  sortDirection={orderBy === attr ? order : false}
                 >
-                  {label}
-                </TableSortLabel>
-              </TableCell>
-            ))}
-          </TableRow>
-        </TableHead>
-        <TableBody data-testid="captures-table-body">
-          {captures &&
-            captures.map((capture) => (
-              <Tooltip
-                key={capture.id}
-                placement="top"
-                arrow={true}
-                interactive={!disableHoverListener}
-                enterDelay={500}
-                enterNextDelay={500}
-                disableFocusListener={true}
-                disableHoverListener={disableHoverListener}
-                classes={{
-                  tooltipPlacementTop: classes.tooltipTop,
-                  arrow: classes.arrow,
-                }}
-                title={
-                  enableTooltips ? (
-                    <CaptureTooltip
-                      capture={capture}
-                      toggleDrawer={createToggleDrawerHandler}
-                    />
-                  ) : (
-                    ''
-                  )
-                }
-              >
-                <TableRow
+                  <TableSortLabel
+                    active={orderBy === attr}
+                    direction={orderBy === attr ? order : 'asc'}
+                    onClick={createSortHandler(attr)}
+                    disabled={noSort}
+                  >
+                    {label}
+                  </TableSortLabel>
+                </TableCell>
+              ))}
+            </TableRow>
+          </TableHead>
+          <TableBody data-testid="captures-table-body">
+            {captures &&
+              captures.map((capture) => (
+                <Tooltip
                   key={capture.id}
-                  onClick={createToggleDrawerHandler(capture.id)}
-                  className={classes.tableRow}
+                  placement="top"
+                  arrow={true}
+                  interactive={!disableHoverListener}
+                  enterDelay={500}
+                  enterNextDelay={500}
+                  disableFocusListener={true}
+                  disableHoverListener={disableHoverListener}
+                  classes={{
+                    tooltipPlacementTop: classes.tooltipTop,
+                    arrow: classes.arrow,
+                  }}
+                  title={
+                    enableTooltips ? (
+                      <CaptureTooltip
+                        capture={capture}
+                        toggleDrawer={createToggleDrawerHandler}
+                      />
+                    ) : (
+                      ''
+                    )
+                  }
                 >
-                  {columns.map(({ attr, renderer }, i) => (
-                    <TableCell key={`${attr}_${i}`}>
-                      {formatCell(capture, speciesLookup, attr, renderer)}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              </Tooltip>
-            ))}
-        </TableBody>
-      </Table>
+                  <TableRow
+                    key={capture.id}
+                    onClick={createToggleDrawerHandler(capture.id)}
+                    className={classes.tableRow}
+                  >
+                    {columns.map(({ attr, renderer }, i) => (
+                      <TableCell key={`${attr}_${i}`}>
+                        {formatCell(capture, speciesLookup, attr, renderer)}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                </Tooltip>
+              ))}
+          </TableBody>
+        </Table>
 
-      {isLoading && <Spinner />}
+        {isLoading && <Spinner />}
 
-      {tablePagination()}
+        {tablePagination()}
 
-      <CaptureDetailProvider>
-        <CaptureDetailDialog
-          open={captureDetail.isDetailsPaneOpen}
-          captureId={captureDetail.id}
-          onClose={closeDrawer}
-          page={'CAPTURES'}
-          onCaptureTagDelete={getCaptures}
-        />
-      </CaptureDetailProvider>
-    </Grid>
+        <CaptureDetailProvider>
+          <CaptureDetailDialog
+            open={captureDetail.isDetailsPaneOpen}
+            captureId={captureDetail.id}
+            onClose={closeDrawer}
+            page={'CAPTURES'}
+            onCaptureTagDelete={getCaptures}
+          />
+        </CaptureDetailProvider>
+      </Grid>
+    </>
   );
 };
 
